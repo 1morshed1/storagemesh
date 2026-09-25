@@ -35,9 +35,9 @@ Built in phases; see [`docs/`](docs/) and [`docs/decisions.md`](docs/decisions.m
 
 - [x] Phase 1 — chunking, content addressing, consistent hash ring
 - [x] Phase 2 — storage nodes (disk store + node API + client)
-- [ ] Phase 3 — upload/download flow with quorum replication + metadata
+- [x] Phase 3 — upload/download flow with quorum replication + metadata
 - [ ] Phase 4 — background workers (GC, integrity, rebalance)
-- [ ] Phase 5 — pre-signed URLs, multipart uploads
+- [x] Phase 5 — pre-signed URLs, multipart uploads
 - [ ] Deploy — docker-compose + Kubernetes manifests
 
 ## Quick start (dev)

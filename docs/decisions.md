@@ -104,6 +104,41 @@ binary applies" and "what operators apply." A single binary bootstraps its own D
 **Trade-off:** not a real migration framework (no versioned up/down). Fine at this
 scale; a production system would adopt golang-migrate or goose.
 
+---
+
+## Phase 3 — Upload/download flow
+
+### D-9 — Quorum writes (W = floor(N/2)+1), fan-out in parallel
+**Chose:** replicate each chunk to all R nodes concurrently, return success at a
+majority of acks; stragglers finish in the background.
+**Why:** availability. A single slow/dead node must not stall or fail an upload.
+A majority-ack rule also guarantees durability — a chunk is "stored" only once a
+majority hold it, so any single later node loss can't lose it. Reads are simpler
+(chunks are immutable, content-addressed) so we fail over across replicas rather
+than doing a read quorum.
+**Trade-off:** a chunk may briefly have fewer than R live copies until the
+background writers / rebalancer catch up. Acceptable given quorum durability; the
+integrity checker repairs under-replication.
+
+### D-9a — Ref-count upsert as the dedup gate; roll back on replication failure
+**Chose:** call IncrementChunkRef before uploading; upload only when it reports
+"new"; DecrementChunkRefs if replication then fails.
+**Why:** makes dedup and ref counting one atomic operation and guarantees we
+never record a reference to bytes that were never stored.
+**Trade-off:** a small race exists for two simultaneous first-time uploads of the
+identical chunk (one may skip upload before the other's bytes land). Documented;
+a production fix would track an "uploading" state or verify node presence.
+
+### D-10 — Shared access key + HMAC pre-signed URLs instead of AWS SigV4
+**Chose:** a constant-time shared-key header check for normal requests, plus full
+HMAC-SHA256 pre-signed URLs.
+**Why:** demonstrates the signing/verification mechanics (canonical string, HMAC,
+constant-time compare, expiry, method binding) that matter for the interview,
+without the bulk of implementing SigV4's canonical-request algorithm, which would
+distract from the storage system.
+**Trade-off:** not wire-compatible with real S3 clients' auth. Isolated to
+auth.go; SigV4 could replace it without touching handlers.
+
 ### D-8 — Idempotent deletes, existence-based dedup
 **Chose:** deleting a missing chunk returns success; putting an existing chunk is
 a no-op.
