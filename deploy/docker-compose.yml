@@ -1,0 +1,115 @@
+# StorageMesh local cluster: Postgres, 3 storage nodes, the gateway, and the
+# background worker. Kafka is included but optional — the gateway degrades to
+# no-op events if it is unreachable.
+#
+#   docker compose -f deploy/docker-compose.yml up --build
+#
+# Then try it:  ./deploy/smoke-test.sh   (see docs/08-running-it.md)
+
+name: storagemesh
+
+x-image: &image
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mesh
+      POSTGRES_PASSWORD: mesh
+      POSTGRES_DB: storagemesh
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mesh -d storagemesh"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Three storage nodes. Each keeps its chunks in a named volume so data
+  # survives restarts. They are identical except for NODE_ID and their volume.
+  storage-1:
+    <<: *image
+    command: ["storagenode"]
+    environment: { NODE_ID: storage-1, DATA_DIR: /data, LISTEN: ":8081" }
+    volumes: ["chunks-1:/data"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  storage-2:
+    <<: *image
+    command: ["storagenode"]
+    environment: { NODE_ID: storage-2, DATA_DIR: /data, LISTEN: ":8081" }
+    volumes: ["chunks-2:/data"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  storage-3:
+    <<: *image
+    command: ["storagenode"]
+    environment: { NODE_ID: storage-3, DATA_DIR: /data, LISTEN: ":8081" }
+    volumes: ["chunks-3:/data"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  gateway:
+    <<: *image
+    command: ["gateway"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      storage-1: { condition: service_healthy }
+      storage-2: { condition: service_healthy }
+      storage-3: { condition: service_healthy }
+    environment:
+      LISTEN: ":8080"
+      DATABASE_URL: "postgres://mesh:mesh@postgres:5432/storagemesh?sslmode=disable"
+      STORAGE_NODES: "http://storage-1:8081,http://storage-2:8081,http://storage-3:8081"
+      REPLICATION: "3"
+      ACCESS_KEY: "dev-access-key"
+      PRESIGN_SECRET: "dev-presign-secret"
+      # Point at Kafka if you enable the profile below; harmless if absent.
+      KAFKA_BROKERS: ""
+    ports: ["8080:8080"]
+
+  worker:
+    <<: *image
+    command: ["worker"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      DATABASE_URL: "postgres://mesh:mesh@postgres:5432/storagemesh?sslmode=disable"
+      STORAGE_NODES: "http://storage-1:8081,http://storage-2:8081,http://storage-3:8081"
+      REPLICATION: "3"
+      GC_INTERVAL: "5m"
+      GC_GRACE: "1m"
+      INTEGRITY_INTERVAL: "10m"
+      REBALANCE_INTERVAL: "2m"
+
+  # Optional event stream. Enable with:  --profile kafka
+  kafka:
+    image: bitnami/kafka:3.7
+    profiles: ["kafka"]
+    environment:
+      KAFKA_CFG_NODE_ID: "1"
+      KAFKA_CFG_PROCESS_ROLES: "controller,broker"
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+    ports: ["9092:9092"]
+
+volumes:
+  chunks-1:
+  chunks-2:
+  chunks-3:

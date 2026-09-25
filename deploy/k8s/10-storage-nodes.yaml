@@ -1,0 +1,62 @@
+# Storage nodes as a StatefulSet.
+#
+# WHY A STATEFULSET (not a Deployment): each storage node owns durable, unique
+# on-disk data (its chunks) and needs a stable network identity so the gateway
+# can address it consistently. StatefulSet gives:
+#   - stable pod names/DNS: storage-0, storage-1, storage-2
+#   - a dedicated PersistentVolume per pod (volumeClaimTemplates)
+# A Deployment's pods are interchangeable and share no stable identity or volume,
+# which is wrong for stateful chunk storage.
+#
+# The headless Service (clusterIP: None) provides per-pod DNS:
+#   storage-0.storage.storagemesh.svc.cluster.local  etc.
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage
+  namespace: storagemesh
+spec:
+  clusterIP: None          # headless => DNS resolves to individual pods
+  selector: { app: storage }
+  ports: [{ port: 8081, targetPort: 8081 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: storage
+  namespace: storagemesh
+spec:
+  serviceName: storage
+  replicas: 3
+  selector:
+    matchLabels: { app: storage }
+  template:
+    metadata:
+      labels: { app: storage }
+    spec:
+      containers:
+        - name: storagenode
+          image: storagemesh:latest      # build & load into your cluster
+          imagePullPolicy: IfNotPresent
+          command: ["storagenode"]
+          env:
+            # NODE_ID defaults to the pod hostname (storage-0, ...), which is
+            # already unique and stable — exactly what we want.
+            - { name: DATA_DIR, value: /data }
+            - { name: LISTEN, value: ":8081" }
+          ports: [{ containerPort: 8081 }]
+          volumeMounts:
+            - { name: chunks, mountPath: /data }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8081 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8081 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata: { name: chunks }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 10Gi } }

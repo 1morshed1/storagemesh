@@ -38,17 +38,21 @@ Built in phases; see [`docs/`](docs/) and [`docs/decisions.md`](docs/decisions.m
 - [x] Phase 3 — upload/download flow with quorum replication + metadata
 - [x] Phase 4 — background workers (GC, integrity, rebalance)
 - [x] Phase 5 — pre-signed URLs, multipart uploads
-- [ ] Deploy — docker-compose + Kubernetes manifests
+- [x] Deploy — docker-compose + Kubernetes manifests
 
 ## Quick start (dev)
 
 ```bash
-# Go 1.24+ required
-go test ./...          # run the test suite
+# Go 1.24+ required. The whole system is exercised in-process, no infra needed:
+go test ./...
+
+# Full local cluster (Postgres + 3 storage nodes + gateway + worker):
+docker compose -f deploy/docker-compose.yml up --build
+./deploy/smoke-test.sh
 ```
 
-Full run instructions land in [`docs/08-running-it.md`](docs/08-running-it.md)
-as the deployment layer is completed.
+Full run instructions (docker-compose, curl walkthrough, Kubernetes) are in
+[`docs/08-running-it.md`](docs/08-running-it.md).
 
 ## Layout
 

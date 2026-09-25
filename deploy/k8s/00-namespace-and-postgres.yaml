@@ -1,0 +1,75 @@
+# Namespace + Postgres metadata store.
+#
+# NOTE: this is a demo-grade Postgres (single pod, one PVC). A production
+# deployment would use a managed database or an operator (CloudNativePG etc.)
+# with replication and backups.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storagemesh
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mesh-secrets
+  namespace: storagemesh
+type: Opaque
+stringData:
+  # Demo values. In production these come from a real secret manager.
+  DATABASE_URL: "postgres://mesh:mesh@postgres:5432/storagemesh?sslmode=disable"
+  ACCESS_KEY: "change-me-access-key"
+  PRESIGN_SECRET: "change-me-presign-secret"
+  POSTGRES_PASSWORD: "mesh"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: storagemesh
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: storagemesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER, value: mesh }
+            - { name: POSTGRES_DB, value: storagemesh }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: mesh-secrets, key: POSTGRES_PASSWORD } }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+          ports: [{ containerPort: 5432 }]
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "mesh", "-d", "storagemesh"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: postgres-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: storagemesh
+spec:
+  selector: { app: postgres }
+  ports: [{ port: 5432, targetPort: 5432 }]

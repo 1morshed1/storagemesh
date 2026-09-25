@@ -172,6 +172,28 @@ used, not where they're implemented).
 **Trade-off:** the worker needs its own copy of node/DSN config. Fine; it's
 12-factor env config.
 
+---
+
+## Deploy
+
+### D-14 — Storage nodes = StatefulSet, gateway = Deployment + HPA
+**Chose:** map each component to the K8s workload that fits its state model.
+**Why:** storage nodes own unique durable disks and need stable network identity,
+which is exactly what a StatefulSet (stable pod names + volumeClaimTemplates +
+headless Service DNS) provides. The gateway is stateless, so it is a Deployment
+that a HorizontalPodAutoscaler can scale on CPU. The worker is a single-replica
+Deployment with `Recreate` so two sweeps never race.
+**Trade-off:** none for the model; the demo Postgres is single-pod and would be
+replaced by a managed DB / operator in production (noted in the manifest).
+
+### D-15 — One image, three binaries, command-selected
+**Chose:** a single multi-stage Docker image containing gateway, storagenode, and
+worker; the container command picks which runs.
+**Why:** simplest build, and guarantees all three components come from the
+identical commit. CGO disabled → static binaries that run on a minimal base.
+**Trade-off:** the image carries all three binaries (a few extra MB). Negligible,
+and worth the build simplicity.
+
 ### D-8 — Idempotent deletes, existence-based dedup
 **Chose:** deleting a missing chunk returns success; putting an existing chunk is
 a no-op.

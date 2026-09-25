@@ -1,0 +1,37 @@
+# Background worker Deployment.
+#
+# Single replica: GC / integrity / rebalance are cluster-wide sweeps and running
+# multiple copies would duplicate work (and, for GC, race each other). If you
+# needed HA here you would add leader election so only one instance is active.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: storagemesh
+spec:
+  replicas: 1
+  strategy: { type: Recreate }   # never run two workers at once
+  selector:
+    matchLabels: { app: worker }
+  template:
+    metadata:
+      labels: { app: worker }
+    spec:
+      containers:
+        - name: worker
+          image: storagemesh:latest
+          imagePullPolicy: IfNotPresent
+          command: ["worker"]
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: mesh-secrets, key: DATABASE_URL } }
+            - name: STORAGE_NODES
+              value: "http://storage-0.storage:8081,http://storage-1.storage:8081,http://storage-2.storage:8081"
+            - { name: REPLICATION, value: "3" }
+            - { name: GC_INTERVAL, value: "1h" }
+            - { name: GC_GRACE, value: "24h" }
+            - { name: INTEGRITY_INTERVAL, value: "6h" }
+            - { name: REBALANCE_INTERVAL, value: "15m" }
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits:   { cpu: "300m", memory: "256Mi" }
