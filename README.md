@@ -34,7 +34,7 @@ garbage collection / integrity checking.
 Built in phases; see [`docs/`](docs/) and [`docs/decisions.md`](docs/decisions.md).
 
 - [x] Phase 1 — chunking, content addressing, consistent hash ring
-- [ ] Phase 2 — storage nodes (disk store + node API)
+- [x] Phase 2 — storage nodes (disk store + node API + client)
 - [ ] Phase 3 — upload/download flow with quorum replication + metadata
 - [ ] Phase 4 — background workers (GC, integrity, rebalance)
 - [ ] Phase 5 — pre-signed URLs, multipart uploads

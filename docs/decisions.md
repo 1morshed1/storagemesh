@@ -56,3 +56,39 @@ and no database container. This is the idiomatic Go way to keep I/O at the edges
 **Trade-off:** the interface must stay honest — the memory impl has to reproduce
 Postgres semantics (e.g. ref-count atomicity) or tests pass while production
 breaks. We keep the interface small to limit that risk.
+
+---
+
+## Phase 2 — Storage nodes
+
+### D-6 — HTTP instead of gRPC between gateway and nodes
+**Chose:** plain HTTP (net/http) for chunk transfer, not the gRPC service the
+plan sketches.
+**Why:** (a) no protoc toolchain required, so the project builds with only the
+Go compiler; (b) chunk transfer is a simple request/response over a byte stream
+— `PUT /chunks/{hash}` with the body streamed — which HTTP does natively without
+gRPC's code generation and streaming-RPC machinery; (c) it keeps the node
+debuggable with `curl`.
+**Trade-off:** we give up gRPC's typed contracts, bidirectional streaming, and
+slightly lower per-call overhead. If this grew, the swap is localized: only
+`internal/storage/{client,server}.go` change; `DiskStore` and every caller stay
+put because they depend on the `Client`'s Go methods, not on HTTP directly.
+
+### D-7 — Verify-on-write + atomic rename in the disk store
+**Chose:** hash bytes while writing and reject mismatches; write to a temp file,
+fsync, then rename into place.
+**Why:** content addressing is only trustworthy if the stored bytes truly match
+their name. Verifying on write catches transport corruption immediately. The
+temp-then-rename dance makes writes atomic so a crash can never publish a
+half-written chunk under a valid hash.
+**Trade-off:** an extra fsync per write costs latency. Correct durability is
+worth it; a throughput-tuned system might batch fsyncs.
+
+### D-8 — Idempotent deletes, existence-based dedup
+**Chose:** deleting a missing chunk returns success; putting an existing chunk is
+a no-op.
+**Why:** the garbage collector and rebalancer retry operations, so every node
+verb must be safe to repeat. Idempotency turns "did my retry double-delete?" into
+a non-question.
+**Trade-off:** none; idempotency is the right default for a distributed system's
+data-plane operations.
