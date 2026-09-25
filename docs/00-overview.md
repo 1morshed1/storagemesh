@@ -52,6 +52,7 @@ Postgres (metadata). That separation is what lets the gateway scale horizontally
 | `06-background-workers.md` | GC, integrity checker, rebalancer | Phase 4 |
 | `07-presigned-urls.md` | HMAC signing, constant-time verification | Phase 5 |
 | `08-running-it.md` | docker-compose, trying it end to end | — |
+| `09-interview-guide.md` | How to explain the system; concept → code → test | — |
 | `decisions.md` | Running log of engineering decisions & deviations from the plan | all |
 
 ## Key engineering decisions at a glance
