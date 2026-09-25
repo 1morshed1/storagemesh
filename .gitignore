@@ -1,0 +1,25 @@
+# Binaries
+/bin/
+storagemesh
+gateway
+storagenode
+*.exe
+
+# Local storage-node data dirs
+/data/
+data-node*/
+
+# Env / secrets
+.env
+*.local
+
+# Go
+*.test
+*.out
+coverage.*
+
+# Editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
