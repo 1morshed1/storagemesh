@@ -84,6 +84,26 @@ half-written chunk under a valid hash.
 **Trade-off:** an extra fsync per write costs latency. Correct durability is
 worth it; a throughput-tuned system might batch fsyncs.
 
+### D-8a — Atomic ref counting via upsert (INSERT ... ON CONFLICT)
+**Chose:** one `INSERT ... ON CONFLICT (hash) DO UPDATE ... RETURNING ref_count`
+statement for `IncrementChunkRef`, using the returned count to decide new-vs-dedup.
+**Why:** two concurrent uploads of the same new chunk would race a naive
+select-then-insert (lost update or duplicate-key error). The upsert is atomic and
+serialized by Postgres, and `RETURNING ref_count` tells the caller if it was
+first (ref_count==1 → upload bytes) or a dedup hit (skip). Let the database do
+the concurrency control it is built for.
+**Trade-off:** ties this logic to a DB that supports upsert; every mainstream one
+does. The `MemStore` reproduces the same semantics under a mutex.
+
+### D-8b — Colocate schema.sql in the package, embed with go:embed
+**Chose:** keep the SQL at `internal/metadata/schema.sql` and embed it; the store
+applies it on connect.
+**Why:** `go:embed` cannot reach a repo-root `migrations/` dir from inside the
+package, and a single embedded source of truth avoids drift between "what the
+binary applies" and "what operators apply." A single binary bootstraps its own DB.
+**Trade-off:** not a real migration framework (no versioned up/down). Fine at this
+scale; a production system would adopt golang-migrate or goose.
+
 ### D-8 — Idempotent deletes, existence-based dedup
 **Chose:** deleting a missing chunk returns success; putting an existing chunk is
 a no-op.
