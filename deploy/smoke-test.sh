@@ -13,8 +13,10 @@ auth=(-H "X-Access-Key: ${KEY}")
 H "health"
 curl -fsS "${GW}/healthz"; echo
 
-H "create bucket 'demo'"
-curl -fsS "${auth[@]}" -X PUT "${GW}/demo"; echo
+H "create bucket 'demo' (409 if it already exists is fine)"
+code=$(curl -sS "${auth[@]}" -X PUT "${GW}/demo" -o /dev/null -w '%{http_code}')
+echo "status=${code}"
+[[ "${code}" == "200" || "${code}" == "409" ]] || { echo "unexpected status"; exit 1; }
 
 H "upload object"
 printf 'hello storagemesh %s\n' "$(date)" > /tmp/sm_obj.txt
@@ -32,7 +34,8 @@ echo "(check gateway logs / chunks table: ref_count should be 2 for shared chunk
 H "pre-signed GET url (no credentials needed to use it)"
 PRES=$(curl -fsS "${auth[@]}" "${GW}/demo/notes/hello.txt?presign=GET&expiry=300")
 echo "${PRES}"
-URL_PATH=$(printf '%s' "${PRES}" | sed -n 's/.*"url":"\([^"]*\)".*/\1/p')
+# JSON encodes '&' as &; decode it so the query string parses.
+URL_PATH=$(printf '%s' "${PRES}" | sed -n 's/.*"url":"\([^"]*\)".*/\1/p' | sed 's/\\u0026/\&/g')
 curl -fsS "${GW}${URL_PATH}" && echo "  <- fetched via presigned URL ✓"
 
 H "list objects"

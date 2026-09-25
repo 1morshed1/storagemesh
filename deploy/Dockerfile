@@ -4,7 +4,7 @@
 # and guarantees all components are built from the identical commit.
 
 # ---- build stage ----
-FROM golang:1.24-alpine AS build
+FROM golang:1.25-alpine AS build
 WORKDIR /src
 
 # Cache module downloads: copy manifests first so `go mod download` is only
