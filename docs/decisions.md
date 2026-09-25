@@ -139,6 +139,39 @@ distract from the storage system.
 **Trade-off:** not wire-compatible with real S3 clients' auth. Isolated to
 auth.go; SigV4 could replace it without touching handlers.
 
+---
+
+## Phase 4 — Background workers
+
+### D-11 — Rebalancer copies missing replicas but doesn't delete misplaced ones
+**Chose:** the rebalancer ensures each chunk exists on all ring-assigned nodes
+(copying where missing) but leaves stale copies on nodes no longer assigned.
+**Why:** copying restores durability (the thing that matters); deleting a stale
+copy is pure space reclamation and can be deferred. Keeping the delete out avoids
+a class of bugs where a mid-flight ring change causes us to delete the only good
+copy.
+**Trade-off:** wasted disk on nodes that used to own a chunk. A future pass
+(GC-style, safe once replication is confirmed elsewhere) can reclaim it.
+
+### D-12 — Repair deletes the corrupt copy before rewriting
+**Chose:** on integrity repair, `DeleteChunk` the corrupt replica first, then copy
+a healthy one in.
+**Why:** the disk store treats an existing file as already-correct (content
+addressing's core assumption) and no-ops an overwrite. Corruption violates that
+assumption, so we must remove the bad file to force a fresh, verified write.
+**Trade-off:** a brief window where that node has no copy of the chunk; other
+replicas still serve it, and quorum + failover cover reads.
+
+### D-13 — Workers are a separate process, ClusterView is consumer-side
+**Chose:** run GC/integrity/rebalance in their own `cmd/worker` binary; define the
+`ClusterView` interface in the worker package.
+**Why:** maintenance load shouldn't compete with request serving, and the two
+should scale/restart independently. A consumer-side interface keeps the worker
+package from importing the gateway (Go's idiom: define interfaces where they're
+used, not where they're implemented).
+**Trade-off:** the worker needs its own copy of node/DSN config. Fine; it's
+12-factor env config.
+
 ### D-8 — Idempotent deletes, existence-based dedup
 **Chose:** deleting a missing chunk returns success; putting an existing chunk is
 a no-op.
