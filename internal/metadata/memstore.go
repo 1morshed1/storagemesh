@@ -18,11 +18,11 @@ import (
 // atomicity and delete-marker behaviour) is what makes tests trustworthy; see
 // decision D-5.
 type MemStore struct {
-	mu       sync.Mutex
-	buckets  map[string]*Bucket          // name -> bucket
-	objects  map[string][]*Object        // bucketID+"\x00"+key -> version list (newest last)
-	chunks   map[string]*ChunkRef        // hash -> ref
-	uploads  map[string]*MultipartUpload // id -> upload
+	mu      sync.Mutex
+	buckets map[string]*Bucket          // name -> bucket
+	objects map[string][]*Object        // bucketID+"\x00"+key -> version list (newest last)
+	chunks  map[string]*ChunkRef        // hash -> ref
+	uploads map[string]*MultipartUpload // id -> upload
 }
 
 // NewMemStore returns an empty in-memory store.

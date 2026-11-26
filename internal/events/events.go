@@ -7,6 +7,7 @@
 // The gateway depends on the Publisher interface, not on Kafka. That gives us:
 //   - NoopPublisher for tests and single-node local runs (no broker needed),
 //   - KafkaPublisher for real deployments,
+//
 // swappable by config. Crucially, a publish failure must NEVER fail the user's
 // upload: the bytes are already durably stored and metadata committed by the
 // time we publish. Events are best-effort side channels, so publish errors are
@@ -23,8 +24,8 @@ import (
 type EventType string
 
 const (
-	ObjectCreated EventType = "object.created"
-	ObjectDeleted EventType = "object.deleted"
+	ObjectCreated  EventType = "object.created"
+	ObjectDeleted  EventType = "object.deleted"
 	ObjectRestored EventType = "object.restored"
 )
 

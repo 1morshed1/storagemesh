@@ -1,8 +1,8 @@
-# Binaries
+# Binaries (root-anchored so they don't hide cmd/<name>/ or internal/<name>/)
 /bin/
-storagemesh
-gateway
-storagenode
+/storagemesh
+/gateway
+/storagenode
 *.exe
 
 # Local storage-node data dirs

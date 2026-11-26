@@ -1,7 +1,7 @@
 # StorageMesh — Learning Log & Architecture
 
 > A simplified, S3-compatible distributed object storage service in Go.
-> This `docs/` folder is written **for learning**: every file explains not just
+> Every file in this `docs/` folder explains not just
 > *what* the code does but *why* it is built that way and what trade-offs were
 > made. Read the docs in order; each maps to a build phase.
 
@@ -52,14 +52,14 @@ Postgres (metadata). That separation is what lets the gateway scale horizontally
 | `06-background-workers.md` | GC, integrity checker, rebalancer | Phase 4 |
 | `07-presigned-urls.md` | HMAC signing, constant-time verification | Phase 5 |
 | `08-running-it.md` | docker-compose, trying it end to end | — |
-| `09-interview-guide.md` | How to explain the system; concept → code → test | — |
-| `decisions.md` | Running log of engineering decisions & deviations from the plan | all |
+| `09-system-walkthrough.md` | The whole system end to end; concept → code → test | — |
+| `decisions.md` | Running log of engineering decisions & deviations from the spec | all |
 
 ## Key engineering decisions at a glance
 
 See `decisions.md` for the full log with reasoning. The headline ones:
 
-1. **HTTP (not gRPC) between gateway and storage nodes.** The plan specifies
+1. **HTTP (not gRPC) between gateway and storage nodes.** The spec specifies
    gRPC. We use plain HTTP with streaming bodies to keep the project buildable
    without a protoc toolchain, and because chunk transfer is a simple
    request/response that does not need gRPC's streaming multiplexing. The
@@ -67,5 +67,5 @@ See `decisions.md` for the full log with reasoning. The headline ones:
 2. **A `Store` interface with in-memory and Postgres implementations.** This
    lets the whole system be unit-tested without a running database, and teaches
    the dependency-inversion pattern that makes Go services testable.
-3. **Content-addressed dedup with reference counting**, exactly as the plan
+3. **Content-addressed dedup with reference counting**, exactly as the spec
    describes, because it is the intellectual core of the project.

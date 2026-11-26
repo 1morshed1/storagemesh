@@ -1,5 +1,8 @@
 # StorageMesh
 
+[![CI](https://github.com/1morshed1/storagemesh/actions/workflows/ci.yml/badge.svg)](https://github.com/1morshed1/storagemesh/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A simplified, S3-compatible **distributed object storage service** written in Go.
 
 Clients `PUT`/`GET` files over an HTTP API. StorageMesh chunks each file,
@@ -8,7 +11,7 @@ storage nodes chosen by consistent hashing, and serves them back. It supports
 versioning, multipart uploads, pre-signed URLs, deduplication, and background
 garbage collection / integrity checking.
 
-> This is a portfolio / learning project. The [`docs/`](docs/) folder is a full
+> The [`docs/`](docs/) folder is a full
 > written walkthrough of the *why* behind every component — start with
 > [`docs/00-overview.md`](docs/00-overview.md).
 
@@ -71,3 +74,7 @@ migrations          SQL schema
 deploy              docker-compose + k8s
 docs                learning walkthrough
 ```
+
+## License
+
+[MIT](LICENSE)

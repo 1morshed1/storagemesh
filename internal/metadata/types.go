@@ -22,11 +22,11 @@ import (
 // Sentinel errors let callers branch on outcomes (e.g. 404 vs 500) without
 // string matching.
 var (
-	ErrBucketNotFound  = errors.New("metadata: bucket not found")
-	ErrBucketExists    = errors.New("metadata: bucket already exists")
-	ErrObjectNotFound  = errors.New("metadata: object not found")
-	ErrUploadNotFound  = errors.New("metadata: multipart upload not found")
-	ErrBucketNotEmpty  = errors.New("metadata: bucket not empty")
+	ErrBucketNotFound = errors.New("metadata: bucket not found")
+	ErrBucketExists   = errors.New("metadata: bucket already exists")
+	ErrObjectNotFound = errors.New("metadata: object not found")
+	ErrUploadNotFound = errors.New("metadata: multipart upload not found")
+	ErrBucketNotEmpty = errors.New("metadata: bucket not empty")
 )
 
 // Bucket is a namespace for objects, owned by a user. Versioning can be toggled

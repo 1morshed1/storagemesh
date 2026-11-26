@@ -1,9 +1,8 @@
-# 09 — Interview Guide: Explaining StorageMesh
+# 09 — System Walkthrough
 
-This ties the whole system together the way you'd explain it in an interview.
-Each talking point links to where it lives in code and the test that proves it.
+This ties the whole system together. Each point links to where it lives in code and the test that proves it.
 
-## The 60-second pitch
+## In 60 seconds
 
 > StorageMesh is an S3-compatible object store. On upload it streams the file
 > through a chunker that splits it into 8 MiB pieces, hashes each piece with
@@ -68,7 +67,7 @@ credentials are needed to *mint* one.
 5. **Match the workload to the runtime.** Stateful nodes → StatefulSet; stateless
    gateway → Deployment + HPA.
 
-## Honest limitations (know these; they show maturity)
+## Known limitations
 
 - Fixed-size chunking dedups poorly under byte *insertion* (content-defined
   chunking would fix it) — D-2.

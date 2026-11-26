@@ -1,7 +1,7 @@
 // Package chunk splits a byte stream into fixed-size pieces ("chunks") and
 // computes each chunk's SHA-256 content hash.
 //
-// WHY THIS EXISTS
+// # WHY THIS EXISTS
 //
 // StorageMesh is a content-addressed object store. Instead of storing a whole
 // file as one blob, we cut it into chunks and address each chunk by the hash of
@@ -14,7 +14,7 @@
 //  3. Integrity. The hash IS the address, so a corrupted chunk can be detected
 //     by re-hashing it and noticing the bytes no longer match the name.
 //
-// STREAMING, NOT BUFFERING
+// # STREAMING, NOT BUFFERING
 //
 // The gateway may receive multi-gigabyte uploads. We must never hold a whole
 // file in memory. The Chunker reads from an io.Reader and yields one chunk at a
@@ -30,9 +30,10 @@ import (
 	"io"
 )
 
-// DefaultChunkSize is 8 MiB, matching the plan. It is a trade-off:
+// DefaultChunkSize is 8 MiB, matching the spec. It is a trade-off:
 //   - Smaller chunks => better dedup granularity, more metadata rows, more RPCs.
 //   - Larger chunks  => less overhead, worse dedup, bigger memory per chunk.
+//
 // 8 MiB is the industry-ish sweet spot (S3 multipart minimum part size is 5 MiB).
 const DefaultChunkSize = 8 * 1024 * 1024
 

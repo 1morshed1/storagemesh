@@ -179,7 +179,7 @@ func (d *DiskStore) Verify(hash string) error {
 }
 
 // List returns every chunk hash stored on this node. Used by the integrity
-// checker and rebalancer. For a portfolio-scale node this in-memory slice is
+// checker and rebalancer. For a demo scale node this in-memory slice is
 // fine; a production node would paginate.
 func (d *DiskStore) List() ([]string, error) {
 	base := filepath.Join(d.root, "chunks")

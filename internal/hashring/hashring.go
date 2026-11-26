@@ -1,7 +1,7 @@
 // Package hashring implements consistent hashing with virtual nodes to decide
 // which storage nodes hold a given chunk.
 //
-// THE PROBLEM IT SOLVES
+// # THE PROBLEM IT SOLVES
 //
 // Say we have N storage nodes and want to place a chunk. The naive answer is
 // node = hash(chunk) % N. It works until N changes. Add or remove one node and
@@ -15,7 +15,7 @@
 // keys move, and only from its neighbours. Removing a node hands its arc to the
 // next node clockwise. Everything else stays put.
 //
-// WHY VIRTUAL NODES
+// # WHY VIRTUAL NODES
 //
 // With one point per physical node, the arcs are wildly uneven — one node might
 // own 40% of the ring by luck, creating hotspots. We instead place many points
@@ -24,7 +24,7 @@
 // and when a node leaves, its load is spread across many neighbours instead of
 // dumped entirely on one.
 //
-// REPLICATION
+// # REPLICATION
 //
 // GetNodes walks clockwise past the first owner to collect R *distinct physical*
 // nodes. Those are the R replicas for the chunk. Skipping vnodes that map back

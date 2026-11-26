@@ -47,7 +47,7 @@ The destination re-verifies on write, so a bad source can never poison it.
 `TestIntegrityCheckerRepairsCorruption` corrupts a file on disk and asserts it is
 healed.
 
-This is the interview answer to *"what if a chunk is corrupted?"*
+This answers *"what if a chunk is corrupted?"*
 
 ## Rebalancer (`rebalance.go`)
 

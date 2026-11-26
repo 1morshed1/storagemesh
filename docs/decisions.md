@@ -22,7 +22,7 @@ edited byte-by-byte) but would be wrong for, say, a database page store.
 
 ### D-2 — 8 MiB fixed-size chunks (not content-defined chunking)
 **Chose:** split on a fixed 8 MiB boundary.
-**Why:** simple, predictable, and matches the plan. Fixed chunks are trivial to
+**Why:** simple, predictable, and matches the spec. Fixed chunks are trivial to
 reason about and to test.
 **Trade-off:** fixed chunking dedups poorly when bytes are *inserted* (every
 boundary after the insert shifts, changing all downstream hashes). Real systems
@@ -133,7 +133,7 @@ a production fix would track an "uploading" state or verify node presence.
 **Chose:** a constant-time shared-key header check for normal requests, plus full
 HMAC-SHA256 pre-signed URLs.
 **Why:** demonstrates the signing/verification mechanics (canonical string, HMAC,
-constant-time compare, expiry, method binding) that matter for the interview,
+constant-time compare, expiry, method binding) that matter most,
 without the bulk of implementing SigV4's canonical-request algorithm, which would
 distract from the storage system.
 **Trade-off:** not wire-compatible with real S3 clients' auth. Isolated to

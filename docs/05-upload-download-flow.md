@@ -32,7 +32,7 @@ So deduplication and reference counting are the *same* operation. If replication
 then fails, we `DecrementChunkRefs` to undo the reference, so we never record a
 reference to bytes that were never stored. (Known small race: two simultaneous
 first-time uploads of the same chunk — one wins the "new" flag, the other may
-skip before the bytes land. Documented as a portfolio-scope limitation; a
+skip before the bytes land. Documented as a demo-scope limitation; a
 production fix pins an "uploading" state or checks node presence.)
 
 ### 2. Quorum writes for availability + durability
@@ -48,7 +48,7 @@ returns as soon as a **write quorum** `W = floor(N/2)+1` acknowledge (2 of 3):
   their goroutines never block); if they fail, the integrity checker /
   rebalancer restores the missing replica later.
 
-This is the answer to the interview question *"how do you handle a storage node
+This answers the question *"how do you handle a storage node
 failure during a write?"* — quorum writes.
 
 ### 3. Streaming, never buffering

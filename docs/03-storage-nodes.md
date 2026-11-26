@@ -32,7 +32,7 @@ two hex characters:
 Why shard? A single directory holding millions of files makes most filesystems
 crawl (directory lookups go linear/expensive). Two hex chars = 256 buckets,
 spreading files evenly. Real systems shard deeper (e.g. `a3/f2/…`); two levels is
-plenty for a portfolio scale.
+plenty for a demo scale.
 
 ## Three correctness details in `DiskStore.Put`
 
